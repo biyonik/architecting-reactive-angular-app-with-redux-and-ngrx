@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Use Advanced Operators</title>
+</head>
+<body>
+    <input type="text" id="text">
+    <div class="result"></div>
+
+
+    <script src="https://unpkg.com/rxjs@7.8.1/dist/bundles/rxjs.umd.js"></script>
+    <script>
+        const {of, fromEvent, from} = rxjs;
+        const {map, debounceTime, flatMap} = rxjs.operators;
+    
+        // fake HTTP call
+        const getData = (text) => {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    resolve(`Data for "${text}": [${Array(10).fill(null).map((_, i) => i + 1).join(', ')}]`);
+                }, 2000);
+            })
+        }
+        
+        const textElem = document.querySelector('#text');
+        const resultElem = document.querySelector('.result');
+
+        const eventStream$ = fromEvent(textElem, 'keyup')
+            .pipe(
+                // map(e => e.target.value), // 1
+                // map(e => from(getData(e.target.value))), //2
+                flatMap(e => from(getData(e.target.value))), // 3
+                debounceTime(300), // 4
+            ).subscribe(console.log);
+    
+    
+    
+    
+    </script>
+</body>
+</html>

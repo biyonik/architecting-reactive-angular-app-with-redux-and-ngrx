@@ -1,17 +1,37 @@
-import { Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { Component, inject, model, OnDestroy, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
-import AppState from './app.state';
-import { AsyncPipe } from '@angular/common';
+import { AsyncPipe, NgFor } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { AppState, CounterState, ProductState } from './app.state';
+import { getProducts, productCreateAction, productDeleteAction } from './app.config';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, AsyncPipe],
+  imports: [RouterOutlet, AsyncPipe, FormsModule, NgFor],
   template: `
     <h1>Angular Ngrx</h1>
     <p>Value: {{counter$ | async }}</p>
+    <button (click)="increment()">Increment</button>
+    <button (click)="decrement()">Decrement</button>
+
+    <hr>
+    <div>
+      <h3>Products</h3>
+      <div>
+        <h4>New Product</h4>
+        <input type="text" [(ngModel)]="newProduct">
+        <button (click)="create()">Create</button>
+      </div>
+      <ul>
+        <li *ngFor="let product of products$ | async">
+          {{product.name}}
+          <button (click)="delete(product.id)">Delete</button>
+        </li>
+      </ul>
+    </div>
   `,
   styles: [`
     :host {
@@ -53,12 +73,35 @@ import { AsyncPipe } from '@angular/common';
 })
 export class AppComponent implements OnInit, OnDestroy {
   counter$: Observable<number> | undefined;
+  products$: Observable<any[]> = new Observable();
 
-  private readonly store: Store<AppState> = inject(Store);
+  newProduct: string = '';
+
+  private readonly productStore: Store<ProductState> = inject(Store<ProductState>);
+  private readonly counterStore: Store<CounterState> = inject(Store<CounterState>);
 
   ngOnInit(): void {
-    this.counter$ = this.store.select('counter');
+    this.counter$ = this.counterStore.select(state => state.counter);
+    this.products$ = this.productStore.select(getProducts);
+  }
 
+  increment(): void {
+    this.counterStore.dispatch({ type: 'INCREMENT' });
+  }
+
+  decrement(): void {
+    this.counterStore.dispatch({ type: 'DECREMENT' });
+  }
+
+  create(): void {
+    this.productStore.dispatch(productCreateAction({
+      payload: { name: this.newProduct, id: Math.floor(Math.random() * 1000), selected: false }
+    }));
+    this.newProduct = '';
+  }
+
+  delete(id: any) {
+    this.productStore.dispatch(productDeleteAction({ id }));
   }
 
   ngOnDestroy(): void { }
